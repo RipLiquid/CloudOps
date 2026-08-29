@@ -9,59 +9,95 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import io.github.ripliquid.cloudops.model.Incident;
 import io.github.ripliquid.cloudops.model.IncidentStatus;
 import io.github.ripliquid.cloudops.model.Severity;
+import io.github.ripliquid.cloudops.repository.IncidentRepository;
 
 class IncidentServiceTest {
 
+    private IncidentRepository incidentRepository;
     private IncidentService incidentService;
 
     @BeforeEach
     void setUp() {
-        incidentService = new IncidentService();
+        incidentRepository = mock(IncidentRepository.class);
+        incidentService = new IncidentService(incidentRepository);
     }
 
     @Test
     void shouldReturnAllIncidents() {
 
+        Incident incident = new Incident(
+                "test-id-1",
+                "Authentication API Down",
+                "Users are unable to log in.",
+                Severity.CRITICAL,
+                IncidentStatus.INVESTIGATING,
+                "Daniyal"
+        );
+
+        when(incidentRepository.findAll())
+                .thenReturn(List.of(incident));
+
         List<Incident> incidents =
                 incidentService.getAllIncidents();
 
-        assertEquals(2, incidents.size());
+        assertEquals(1, incidents.size());
+        assertEquals(
+                "Authentication API Down",
+                incidents.getFirst().getTitle()
+        );
     }
 
     @Test
     void shouldReturnIncidentById() {
 
-        Incident incident =
-                incidentService.getIncidentById(1L);
-
-        assertNotNull(incident);
-        assertEquals(
+        Incident incident = new Incident(
+                "test-id-1",
                 "Authentication API Down",
-                incident.getTitle()
+                "Users are unable to log in.",
+                Severity.CRITICAL,
+                IncidentStatus.INVESTIGATING,
+                "Daniyal"
         );
+
+        when(incidentRepository.findById("test-id-1"))
+                .thenReturn(incident);
+
+        Incident result =
+                incidentService.getIncidentById("test-id-1");
+
+        assertNotNull(result);
+        assertEquals("test-id-1", result.getId());
         assertEquals(
                 Severity.CRITICAL,
-                incident.getSeverity()
+                result.getSeverity()
         );
     }
 
     @Test
     void shouldReturnNullForMissingIncident() {
 
-        Incident incident =
-                incidentService.getIncidentById(999L);
+        when(incidentRepository.findById("missing-id"))
+                .thenReturn(null);
 
-        assertNull(incident);
+        Incident result =
+                incidentService.getIncidentById("missing-id");
+
+        assertNull(result);
     }
 
     @Test
-    void shouldCreateIncident() {
+    void shouldCreateIncidentWithUuid() {
 
-        Incident newIncident = new Incident(
+        Incident incident = new Incident(
                 null,
                 "Payment Service Failure",
                 "Payments are unavailable.",
@@ -70,52 +106,60 @@ class IncidentServiceTest {
                 "Daniyal"
         );
 
+        when(incidentRepository.save(any(Incident.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
         Incident created =
-                incidentService.createIncident(newIncident);
+                incidentService.createIncident(incident);
 
         assertNotNull(created.getId());
-        assertEquals(3L, created.getId());
-        assertEquals(
-                "Payment Service Failure",
-                created.getTitle()
-        );
+        assertFalse(created.getId().isBlank());
 
-        assertEquals(
-                3,
-                incidentService.getAllIncidents().size()
-        );
+        verify(incidentRepository)
+                .save(incident);
     }
 
     @Test
     void shouldUpdateIncident() {
 
+        String id = "test-id-1";
+
+        Incident existing = new Incident(
+                id,
+                "Old Title",
+                "Old Description",
+                Severity.HIGH,
+                IncidentStatus.OPEN,
+                "Daniyal"
+        );
+
         Incident updatedData = new Incident(
                 null,
-                "Authentication API Restored",
-                "Login functionality has been restored.",
+                "Updated Title",
+                "Updated Description",
                 Severity.LOW,
                 IncidentStatus.RESOLVED,
                 "Daniyal"
         );
 
+        when(incidentRepository.findById(id))
+                .thenReturn(existing);
+
+        when(incidentRepository.save(any(Incident.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
         Incident updated =
                 incidentService.updateIncident(
-                        1L,
+                        id,
                         updatedData
                 );
 
         assertNotNull(updated);
-
+        assertEquals(id, updated.getId());
         assertEquals(
-                "Authentication API Restored",
+                "Updated Title",
                 updated.getTitle()
         );
-
-        assertEquals(
-                Severity.LOW,
-                updated.getSeverity()
-        );
-
         assertEquals(
                 IncidentStatus.RESOLVED,
                 updated.getStatus()
@@ -125,10 +169,13 @@ class IncidentServiceTest {
     @Test
     void shouldReturnNullWhenUpdatingMissingIncident() {
 
+        when(incidentRepository.findById("missing-id"))
+                .thenReturn(null);
+
         Incident updatedData = new Incident(
                 null,
-                "Missing Incident",
-                "This incident does not exist.",
+                "Updated",
+                "Updated Description",
                 Severity.LOW,
                 IncidentStatus.OPEN,
                 "Daniyal"
@@ -136,36 +183,36 @@ class IncidentServiceTest {
 
         Incident result =
                 incidentService.updateIncident(
-                        999L,
+                        "missing-id",
                         updatedData
                 );
 
         assertNull(result);
+
+        verify(incidentRepository, never())
+                .save(any());
     }
 
     @Test
     void shouldDeleteIncident() {
 
+        when(incidentRepository.deleteById("test-id-1"))
+                .thenReturn(true);
+
         boolean deleted =
-                incidentService.deleteIncident(1L);
+                incidentService.deleteIncident("test-id-1");
 
         assertTrue(deleted);
-
-        assertNull(
-                incidentService.getIncidentById(1L)
-        );
-
-        assertEquals(
-                1,
-                incidentService.getAllIncidents().size()
-        );
     }
 
     @Test
     void shouldReturnFalseWhenDeletingMissingIncident() {
 
+        when(incidentRepository.deleteById("missing-id"))
+                .thenReturn(false);
+
         boolean deleted =
-                incidentService.deleteIncident(999L);
+                incidentService.deleteIncident("missing-id");
 
         assertFalse(deleted);
     }

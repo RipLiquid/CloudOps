@@ -36,7 +36,7 @@ public class IncidentController {
 
     @GetMapping("/{id}")
     public ResponseEntity<Incident> getIncidentById(
-            @PathVariable Long id
+            @PathVariable String id
     ) {
 
         Incident incident =
@@ -69,7 +69,7 @@ public class IncidentController {
 
     @PutMapping("/{id}")
     public ResponseEntity<Incident> updateIncident(
-            @PathVariable Long id,
+            @PathVariable String id,
             @Valid @RequestBody Incident incident
     ) {
 
@@ -88,7 +88,7 @@ public class IncidentController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteIncident(
-            @PathVariable Long id
+            @PathVariable String id
     ) {
 
         boolean deleted =

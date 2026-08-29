@@ -34,7 +34,7 @@ class IncidentControllerTest {
     void shouldReturnAllIncidents() throws Exception {
 
         Incident incident = new Incident(
-                1L,
+                "test-id-1",
                 "Authentication API Down",
                 "Users are unable to log in.",
                 Severity.CRITICAL,
@@ -47,7 +47,10 @@ class IncidentControllerTest {
 
         mockMvc.perform(get("/api/incidents"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].id").value(1))
+                .andExpect(
+                        jsonPath("$[0].id")
+                                .value("test-id-1")
+                )
                 .andExpect(
                         jsonPath("$[0].title")
                                 .value("Authentication API Down")
@@ -58,7 +61,7 @@ class IncidentControllerTest {
     void shouldReturnIncidentById() throws Exception {
 
         Incident incident = new Incident(
-                1L,
+                "test-id-1",
                 "Authentication API Down",
                 "Users are unable to log in.",
                 Severity.CRITICAL,
@@ -66,12 +69,17 @@ class IncidentControllerTest {
                 "Daniyal"
         );
 
-        when(incidentService.getIncidentById(1L))
+        when(incidentService.getIncidentById("test-id-1"))
                 .thenReturn(incident);
 
-        mockMvc.perform(get("/api/incidents/1"))
+        mockMvc.perform(
+                        get("/api/incidents/test-id-1")
+                )
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(1))
+                .andExpect(
+                        jsonPath("$.id")
+                                .value("test-id-1")
+                )
                 .andExpect(
                         jsonPath("$.severity")
                                 .value("CRITICAL")
@@ -81,10 +89,12 @@ class IncidentControllerTest {
     @Test
     void shouldReturn404ForMissingIncident() throws Exception {
 
-        when(incidentService.getIncidentById(999L))
+        when(incidentService.getIncidentById("missing-id"))
                 .thenReturn(null);
 
-        mockMvc.perform(get("/api/incidents/999"))
+        mockMvc.perform(
+                        get("/api/incidents/missing-id")
+                )
                 .andExpect(status().isNotFound());
     }
 
@@ -92,7 +102,7 @@ class IncidentControllerTest {
     void shouldCreateIncident() throws Exception {
 
         Incident created = new Incident(
-                3L,
+                "generated-uuid",
                 "Storage Failure",
                 "Uploads are unavailable.",
                 Severity.HIGH,
@@ -115,14 +125,15 @@ class IncidentControllerTest {
 
         mockMvc.perform(
                         post("/api/incidents")
-                                .contentType(MediaType.APPLICATION_JSON)
+                                .contentType(
+                                        MediaType.APPLICATION_JSON
+                                )
                                 .content(body)
                 )
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.id").value(3))
                 .andExpect(
-                        jsonPath("$.title")
-                                .value("Storage Failure")
+                        jsonPath("$.id")
+                                .value("generated-uuid")
                 );
     }
 
@@ -141,7 +152,9 @@ class IncidentControllerTest {
 
         mockMvc.perform(
                         post("/api/incidents")
-                                .contentType(MediaType.APPLICATION_JSON)
+                                .contentType(
+                                        MediaType.APPLICATION_JSON
+                                )
                                 .content(body)
                 )
                 .andExpect(status().isBadRequest());
@@ -150,10 +163,12 @@ class IncidentControllerTest {
     @Test
     void shouldDeleteIncident() throws Exception {
 
-        when(incidentService.deleteIncident(1L))
+        when(incidentService.deleteIncident("test-id-1"))
                 .thenReturn(true);
 
-        mockMvc.perform(delete("/api/incidents/1"))
+        mockMvc.perform(
+                        delete("/api/incidents/test-id-1")
+                )
                 .andExpect(status().isNoContent());
     }
 }
