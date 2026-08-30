@@ -95,8 +95,7 @@ jobs:
         shell: bash
         run: |
           JAR_PATH=$(find target -maxdepth 1 -type f \
-            -name 'cloudops-*.jar' \
-            ! -name 'original-*' \
+            -name 'cloudops-*-lambda.jar' \
             | head -n 1)
 
           if [ -z "$JAR_PATH" ]; then

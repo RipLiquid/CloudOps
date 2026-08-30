@@ -24,10 +24,8 @@
         <aws.java.sdk.version>2.54.6</aws.java.sdk.version>
     </properties>
 
-    <!-- Controls AWS SDK dependency versions -->
     <dependencyManagement>
         <dependencies>
-
             <dependency>
                 <groupId>software.amazon.awssdk</groupId>
                 <artifactId>bom</artifactId>
@@ -35,7 +33,6 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
-
         </dependencies>
     </dependencyManagement>
 
@@ -71,8 +68,14 @@
             <artifactId>signin</artifactId>
         </dependency>
 
-        <!-- Testing -->
+        <!-- AWS Lambda adapter -->
+        <dependency>
+            <groupId>com.amazonaws.serverless</groupId>
+            <artifactId>aws-serverless-java-container-springboot4</artifactId>
+            <version>3.0.0</version>
+        </dependency>
 
+        <!-- Testing -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator-test</artifactId>
@@ -91,24 +94,16 @@
             <scope>test</scope>
         </dependency>
 
-        <dependency>
-             <groupId>com.amazonaws.serverless</groupId>
-            <artifactId>aws-serverless-java-container-springboot4</artifactId>
-            <version>3.0.0</version>
-        </dependency>
     </dependencies>
 
     <build>
         <plugins>
 
+            <!-- Create separate Lambda deployment JAR -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
                 <version>3.5.1</version>
-
-                <configuration>
-                    <createDependencyReducedPom>false</createDependencyReducedPom>
-                </configuration>
 
                 <executions>
                     <execution>
@@ -119,15 +114,25 @@
                         </goals>
 
                         <configuration>
+                            <createDependencyReducedPom>false</createDependencyReducedPom>
+
+                            <shadedArtifactAttached>true</shadedArtifactAttached>
+                            <shadedClassifierName>lambda</shadedClassifierName>
+
                             <artifactSet>
                                 <excludes>
                                     <exclude>org.apache.tomcat.embed:*</exclude>
                                 </excludes>
                             </artifactSet>
                         </configuration>
-
                     </execution>
                 </executions>
+            </plugin>
+
+            <!-- Create executable Spring Boot JAR for Docker/local use -->
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
             </plugin>
 
         </plugins>
