@@ -225,8 +225,6 @@ Admins
 
 These groups provide the identity structure for group-based application authorization.
 
-Backend enforcement of different permissions between these groups is planned as the next security improvement.
-
 ---
 
 ## No Hard-Coded AWS Credentials
@@ -692,17 +690,6 @@ CloudOps currently includes:
 - Spring Boot Actuator health checks
 - CloudWatch logging
 - Automated testing
-
----
-
-# Future Improvements
-
-- Enforce group-based role authorization on API operations
-- Make `DemoUsers` read-only
-- Incident search and filtering
-- Incident timestamps
-- Audit history
-- Additional CloudWatch metrics and alarms
 
 ---
 
