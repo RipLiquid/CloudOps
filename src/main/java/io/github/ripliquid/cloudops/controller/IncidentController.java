@@ -43,7 +43,9 @@ public class IncidentController {
                 incidentService.getIncidentById(id);
 
         if (incident == null) {
-            return ResponseEntity.notFound().build();
+            return ResponseEntity
+                    .notFound()
+                    .build();
         }
 
         return ResponseEntity.ok(incident);
@@ -55,7 +57,9 @@ public class IncidentController {
     ) {
 
         Incident createdIncident =
-                incidentService.createIncident(incident);
+                incidentService.createIncident(
+                        incident
+                );
 
         return ResponseEntity
                 .created(
@@ -80,10 +84,14 @@ public class IncidentController {
                 );
 
         if (updatedIncident == null) {
-            return ResponseEntity.notFound().build();
+            return ResponseEntity
+                    .notFound()
+                    .build();
         }
 
-        return ResponseEntity.ok(updatedIncident);
+        return ResponseEntity.ok(
+                updatedIncident
+        );
     }
 
     @DeleteMapping("/{id}")
@@ -95,9 +103,13 @@ public class IncidentController {
                 incidentService.deleteIncident(id);
 
         if (!deleted) {
-            return ResponseEntity.notFound().build();
+            return ResponseEntity
+                    .notFound()
+                    .build();
         }
 
-        return ResponseEntity.noContent().build();
+        return ResponseEntity
+                .noContent()
+                .build();
     }
 }

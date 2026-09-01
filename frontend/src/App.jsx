@@ -33,8 +33,23 @@ async function getAccessToken() {
   return token;
 }
 
+async function checkAdminAccess() {
+  const session = await fetchAuthSession();
+
+  const groups =
+    session.tokens?.accessToken?.payload?.[
+      "cognito:groups"
+    ] ?? [];
+
+  return (
+    Array.isArray(groups) &&
+    groups.includes("Admins")
+  );
+}
+
 function App() {
   const [user, setUser] = useState(null);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -43,7 +58,8 @@ function App() {
 
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
+  const [submitting, setSubmitting] =
+    useState(false);
 
   const [showForm, setShowForm] = useState(false);
   const [editingIncident, setEditingIncident] =
@@ -87,39 +103,47 @@ function App() {
     }
   }, []);
 
-
-
   useEffect(() => {
-  let cancelled = false;
+    let cancelled = false;
 
-  async function initializeApp() {
-    try {
-      const currentUser =
-        await getCurrentUser();
+    async function initializeApp() {
+      try {
+        const currentUser =
+          await getCurrentUser();
 
-      if (cancelled) {
-        return;
-      }
+        if (cancelled) {
+          return;
+        }
 
-      setUser(currentUser);
+        setUser(currentUser);
 
-      await loadIncidents();
-    } catch {
-      if (!cancelled) {
-        setUser(null);
-      }
-    } finally {
-      if (!cancelled) {
-        setLoading(false);
+        const adminAccess =
+          await checkAdminAccess();
+
+        if (cancelled) {
+          return;
+        }
+
+        setIsAdmin(adminAccess);
+
+        await loadIncidents();
+      } catch {
+        if (!cancelled) {
+          setUser(null);
+          setIsAdmin(false);
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
       }
     }
-  }
 
-  void initializeApp();
+    void initializeApp();
 
-  return () => {
-    cancelled = true;
-  };
+    return () => {
+      cancelled = true;
+    };
   }, [loadIncidents]);
 
   async function handleLogin(event) {
@@ -150,11 +174,20 @@ function App() {
         await getCurrentUser();
 
       setUser(currentUser);
+
+      const adminAccess =
+        await checkAdminAccess();
+
+      setIsAdmin(adminAccess);
+
       setPassword("");
 
       await loadIncidents();
     } catch (err) {
       console.error(err);
+
+      setUser(null);
+      setIsAdmin(false);
 
       setError(
         err.message ||
@@ -169,6 +202,7 @@ function App() {
     await signOut();
 
     setUser(null);
+    setIsAdmin(false);
     setIncidents([]);
     setUsername("");
     setPassword("");
@@ -198,6 +232,14 @@ function App() {
   }
 
   function openEditForm(incident) {
+    if (!isAdmin) {
+      setError(
+        "Demo users cannot edit incidents."
+      );
+
+      return;
+    }
+
     setEditingIncident(incident);
 
     setIncidentForm({
@@ -231,15 +273,23 @@ function App() {
   ) {
     event.preventDefault();
 
+    const isEditing =
+      editingIncident !== null;
+
+    if (isEditing && !isAdmin) {
+      setError(
+        "Demo users cannot edit incidents."
+      );
+
+      return;
+    }
+
     setSubmitting(true);
     setError("");
 
     try {
       const accessToken =
         await getAccessToken();
-
-      const isEditing =
-        editingIncident !== null;
 
       const url = isEditing
         ? `${
@@ -273,6 +323,12 @@ function App() {
       );
 
       if (!response.ok) {
+        if (response.status === 403) {
+          throw new Error(
+            "You do not have permission to perform this action."
+          );
+        }
+
         throw new Error(
           `Request failed: ${response.status}`
         );
@@ -285,9 +341,12 @@ function App() {
       console.error(err);
 
       setError(
-        editingIncident
-          ? "Unable to update incident."
-          : "Unable to create incident."
+        err.message ||
+          (
+            editingIncident
+              ? "Unable to update incident."
+              : "Unable to create incident."
+          )
       );
     } finally {
       setSubmitting(false);
@@ -297,6 +356,14 @@ function App() {
   async function handleDeleteIncident(
     incident
   ) {
+    if (!isAdmin) {
+      setError(
+        "Demo users cannot delete incidents."
+      );
+
+      return;
+    }
+
     const confirmed =
       window.confirm(
         `Delete "${incident.title}"?`
@@ -329,6 +396,12 @@ function App() {
       );
 
       if (!response.ok) {
+        if (response.status === 403) {
+          throw new Error(
+            "You do not have permission to delete incidents."
+          );
+        }
+
         throw new Error(
           `Delete failed: ${response.status}`
         );
@@ -339,7 +412,8 @@ function App() {
       console.error(err);
 
       setError(
-        "Unable to delete incident."
+        err.message ||
+          "Unable to delete incident."
       );
     }
   }
@@ -479,6 +553,14 @@ function App() {
               : "+ New Incident"}
           </button>
         </div>
+
+        {!isAdmin && (
+          <div className="error-banner">
+            Demo access: you can view and
+            create incidents. Editing and
+            deleting are restricted.
+          </div>
+        )}
 
         {error && (
           <div className="error-banner">
@@ -730,29 +812,31 @@ function App() {
                         </span>
                       </div>
 
-                      <div className="incident-actions">
-                        <button
-                          className="edit-button"
-                          onClick={() =>
-                            openEditForm(
-                              incident
-                            )
-                          }
-                        >
-                          Edit
-                        </button>
+                      {isAdmin && (
+                        <div className="incident-actions">
+                          <button
+                            className="edit-button"
+                            onClick={() =>
+                              openEditForm(
+                                incident
+                              )
+                            }
+                          >
+                            Edit
+                          </button>
 
-                        <button
-                          className="delete-button"
-                          onClick={() =>
-                            handleDeleteIncident(
-                              incident
-                            )
-                          }
-                        >
-                          Delete
-                        </button>
-                      </div>
+                          <button
+                            className="delete-button"
+                            onClick={() =>
+                              handleDeleteIncident(
+                                incident
+                              )
+                            }
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </article>
                 )

@@ -26,6 +26,7 @@
 
     <dependencyManagement>
         <dependencies>
+
             <dependency>
                 <groupId>software.amazon.awssdk</groupId>
                 <artifactId>bom</artifactId>
@@ -33,6 +34,7 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
+
         </dependencies>
     </dependencyManagement>
 
@@ -56,19 +58,31 @@
             <artifactId>spring-boot-starter-webmvc</artifactId>
         </dependency>
 
+        <!-- Spring Security -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId>
+        </dependency>
+
+        <!-- OAuth2 JWT Resource Server -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-oauth2-resource-server</artifactId>
+        </dependency>
+
         <!-- AWS DynamoDB -->
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>dynamodb</artifactId>
         </dependency>
 
-        <!-- Allows AWS SDK to use credentials from aws login -->
+        <!-- AWS CLI/login credential support -->
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>signin</artifactId>
         </dependency>
 
-        <!-- AWS Lambda adapter -->
+        <!-- AWS Lambda Spring Boot adapter -->
         <dependency>
             <groupId>com.amazonaws.serverless</groupId>
             <artifactId>aws-serverless-java-container-springboot4</artifactId>
@@ -76,6 +90,7 @@
         </dependency>
 
         <!-- Testing -->
+
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator-test</artifactId>
@@ -94,6 +109,12 @@
             <scope>test</scope>
         </dependency>
 
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+
     </dependencies>
 
     <build>
@@ -107,6 +128,7 @@
 
                 <executions>
                     <execution>
+
                         <phase>package</phase>
 
                         <goals>
@@ -114,22 +136,37 @@
                         </goals>
 
                         <configuration>
-                            <createDependencyReducedPom>false</createDependencyReducedPom>
 
-                            <shadedArtifactAttached>true</shadedArtifactAttached>
-                            <shadedClassifierName>lambda</shadedClassifierName>
+                            <createDependencyReducedPom>
+                                false
+                            </createDependencyReducedPom>
+
+                            <shadedArtifactAttached>
+                                true
+                            </shadedArtifactAttached>
+
+                            <shadedClassifierName>
+                                lambda
+                            </shadedClassifierName>
 
                             <artifactSet>
                                 <excludes>
-                                    <exclude>org.apache.tomcat.embed:*</exclude>
+
+                                    <exclude>
+                                        org.apache.tomcat.embed:*
+                                    </exclude>
+
                                 </excludes>
                             </artifactSet>
+
                         </configuration>
+
                     </execution>
                 </executions>
+
             </plugin>
 
-            <!-- Create executable Spring Boot JAR for Docker/local use -->
+            <!-- Executable Spring Boot JAR for Docker/local -->
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
