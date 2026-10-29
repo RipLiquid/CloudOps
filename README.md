@@ -709,7 +709,6 @@ CloudOps demonstrates practical experience with:
 - IAM and least-privilege security
 - AWS STS
 - GitHub Actions CI/CD
-- OIDC federation
 - Automated AWS deployment
 - Docker containerization
 - Automated testing
