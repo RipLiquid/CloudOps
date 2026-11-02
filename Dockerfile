@@ -5,7 +5,7 @@ WORKDIR /app
 COPY pom.xml .
 COPY src ./src
 
-RUN mvn clean package -DskipTests
+RUN mvn --batch-mode clean package
 
 RUN JAR_FILE=$(find target -maxdepth 1 -type f \
     -name 'cloudops-*.jar' \

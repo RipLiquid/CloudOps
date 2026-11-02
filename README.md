@@ -599,6 +599,49 @@ UP
 
 The Docker image uses the executable Spring Boot JAR rather than the AWS Lambda deployment package.
 
+## Prebuilt image on GitHub Packages
+
+The backend is also published to the [CloudOps container package](https://github.com/users/RipLiquid/packages/container/package/cloudops).
+Docker Desktop must be running with Linux containers enabled.
+
+Download and start the latest image:
+
+```powershell
+docker pull ghcr.io/ripliquid/cloudops:latest
+docker run --rm -p 127.0.0.1:8080:8080 ghcr.io/ripliquid/cloudops:latest
+```
+
+In another terminal, check startup:
+
+```powershell
+Invoke-RestMethod http://localhost:8080/actuator/health
+```
+
+The health response should contain `"status": "UP"`. Incident endpoints still
+require a valid Cognito JWT; downloading the image does not grant access to the
+hosted application's data. To use your own AWS environment, supply an environment
+file at runtime:
+
+```powershell
+docker run --rm -p 127.0.0.1:8080:8080 --env-file .env.cloudops ghcr.io/ripliquid/cloudops:latest
+```
+
+Configure `AWS_REGION`, `AWS_DYNAMODB_TABLE_NAME`,
+`SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI`, and
+`SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI` for your resources.
+Provide AWS credentials through the standard AWS credential chain (for example,
+an appropriate runtime IAM role or runtime environment variables). Temporary
+credentials also require `AWS_SESSION_TOKEN`. Keep credential files out of Git;
+credentials are never needed to build or download the public image.
+
+The `CloudOps Container` workflow runs the backend tests inside the Docker build,
+starts the image, checks health, and confirms unauthenticated incident requests
+return HTTP 401. Pull requests validate without publishing. Relevant pushes to
+`main`, or a manual workflow run on `main`, publish the tested image with `latest`
+and `sha-<full commit SHA>` tags. Use the commit tag for a repeatable version.
+The initial published platform is `linux/amd64`; this package contains the backend
+only. The frontend remains available through the live application link above.
+
 ---
 
 # AWS Deployment
